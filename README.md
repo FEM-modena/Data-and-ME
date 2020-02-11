@@ -1,6 +1,7 @@
 # Data and ME
 
 Solutions can be found here: [master the Tidyverse](https://github.com/rstudio-education/master-the-tidyverse/)
+If you are interested in a complete step-by-step course on how to use Statistics and Data Science to answer social science questions, check out [philipp broniecki](https://philippbroniecki.com/statistics1/)
 
 Material for the workshops organized at FEM in collaboration with UniMore
  
