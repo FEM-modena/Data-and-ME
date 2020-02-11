@@ -1,4 +1,6 @@
 # Data and ME
+
+Solutions can be found here: [Remaster the Tidyverse](https://github.com/rstudio-education/master-the-tidyverse/tree/master/solutions)
  Material for the workshops organized at FEM in collaboration with UniMore
  
 Data Science & Me is a free introductory course to R programming and Data Science for the UniMoRe students. The lessons will be hosted at FEM - Future Education Modena.
