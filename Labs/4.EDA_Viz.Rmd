@@ -1,0 +1,244 @@
+---
+title: "Sfida: Visualizza i Dati per l'UNESCO"
+author: "XXXX"
+date: "13-02-2020"
+output: 
+  learnr::tutorial:
+    progressive: true
+    allow_skip: true
+    df_print: default
+runtime: shiny_prerendered
+---
+
+## Ringraziamento
+
+**Un ringraziamento speciale a Cédric Scherer e alla comunità di TidyTuesday**
+
+Questo tutorial si basa sul lavoro di [Cédric Scherer](https://cedricscherer.netlify.com/top/about/) e del suo tutorial "the evolution of a ggplot" che guarda ai [dati forniti dall'UNESCO sui rapporti globali tra studenti e insegnanti](http://data.uis.unesco.org/index.aspx?queryid=180) selezionato per [#TidyTuesday challenge 19 of 2019](https://github.com/rfordatascience/tidytuesday/tree/master/data/2019/2019-05-07)
+
+### Il Dataset 
+
+Il dataset che utilizziamo è una versione ripulita del dataset del'UNESCO con i dati sul numero di studenti per ogni insegnante nell scuole elementari e medie in tutto il mondo. 
+
+Il dataset si chiama **df_ratios** e contiene diverse variabili che ci possono aiutare ad esplorare il rapporto tra studenti e insegnanti e come cambia in base al paese e continente
+```{r libraries,echo=FALSE, message = FALSE,warning=FALSE}
+library(tidyverse)
+library(rcartocolor)
+library(ggsci)
+library(extrafont)
+```
+
+```{r data preparation}
+df_students <- readr::read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2019/2019-05-07/student_teacher_ratio.csv")
+df_world_tile <- readr::read_csv("https://gist.githubusercontent.com/maartenzam/787498bbc07ae06b637447dbd430ea0a/raw/9a9dafafb44d8990f85243a9c7ca349acd3a0d07/worldtilegrid.csv") %>%
+  mutate(
+    ## Namibias two-digit country code is handled as `NA` - let us fix that
+    alpha.2 = if_else(name == "Namibia", "NA", alpha.2),
+    ## We are going to split "Americas" into "North America" and "Sout America"
+    region = if_else(region == "Americas", sub.region, region),
+    region = if_else(region %in% c("Northern America", "Central America", "Caribbean"),
+                     "North America", region),
+    region = if_else(region == "Southern America", "South America", region),
+    ## to join both data sets, we need a id column
+    country_code = alpha.3
+  )
+df_ratios <- df_students %>%
+  ## Let's keep only the most recent data per country
+  group_by(country, indicator) %>%
+  filter(year == max(year)) %>%
+  ungroup() %>%
+  # Create `NA`s for countries which do not have any data 2012-2018
+  complete(indicator, nesting(country, country_code)) %>%
+  ## Let's focus on primary education and keep only countries (coded by letters)
+  filter(
+    indicator == "Primary Education",
+    str_detect(country_code, "[A-Z]")
+  ) %>%
+  ## merge with world tile map data
+  full_join(df_world_tile) %>%
+  filter(
+    !is.na(region),
+    !is.na(indicator)
+  ) %>%
+  group_by(region) %>%
+  mutate(student_ratio_region = mean(student_ratio, na.rm = T)) %>%
+  ungroup()
+```
+
+```{r data-sample, echo= FALSE, warning=FALSE, message = FALSE}
+set.seed(123)
+df_ratios %>%
+  group_by(region) %>%
+  sample_n(2) %>%
+  ungroup() %>% 
+  dplyr::select(indicator, country, region, student_ratio, student_ratio_region) %>%
+  head(12)
+```
+
+### Leggere il dataset
+
+Il primo passo è **sempre** quello di capire il dataset e le variabili
+
+Queste funzioni possono essere utili per questo scopo, dovete aggiungere il nome del dataset (ricordatevi che si chiama **df_ratios** e "run the code" e osservate cosa fanno e come ci possono essere d'aiuto
+
+
+```{r data-sample II}
+head()
+***
+  ***
+  ***
+  
+```
+
+## Creare un boxplot 
+
+Dove aggiungere le giuste variabili `x` e `y`? Il grafico deve rappresentare rapporto studenti/insegnanti (prima variabile- codificata come `student_ratio`) in ogni contienente (seconda variabile, codificata come `region`).
+
+Dovete aggiungere le giuste variabli 
+```{r boxplot-basic, warning=FALSE, fig.width = 8, fig.heigh = 4.5}
+ggplot(df_ratios, aes(x = "", y = "")) +
+  geom_boxplot()
+```
+
+Quali osservazioni potete fare da questo grafico?
+
+## Come meglio riorganizzare i dati 
+
+Una buona routine con questo tipo di dati (qualitativi e non ordinati) per i grafici a scatole (o qualsiasi altro tipo come grafico a barre) è quello di disporre in un ordine crescente o decrescente i dati per aumentare la leggibilità. Poiché la categoria "continente (region)" non ha un ordinamento naturale, riorganizzare i grafici a scatole in base al loro rapporto studente-insegnante medio anziché in ordine alfabetico:
+
+Completa il grafico con le variabili giuste e aggiungi la funzione per creare un grafico `boxplot`
+
+```{r boxplot-sorted, fig.width = 8, fig.heigh = 4.5}
+df_sorted <- df_ratios %>% # questo codice crea una nuova variable 
+  mutate(region = fct_reorder(region, -student_ratio_region)) #questo codice riogranizza i dati
+ggplot(df_sorted, aes(x = , y = ))
+```
+
+### Come migliorare il grafico?
+
+Per aumentare la leggibilità, nel prossimo esercizio, capovolgeremo le coordinate (nota che potremmo anche cambiare gli argomenti `x` e `y` nella specificazione ggplot2 - ma questo non funziona per i grafici a scatole quindi usiamo `coord_flip ())`. 
+
+```{r hidden-code, warning=FALSE, echo=FALSE}
+g <- ggplot(df_sorted, aes(x = ****, y = ***, color = ***)) +
+  **** +
+  scale_y_continuous(limits = c(0, 90), expand = c(0.005, 0.005)) +
+  scale_color_uchicago() +
+  labs(x = NULL, y = "Student to teacher ratio") 
+```
+
+## Quale grafico
+
+Cosa bisogna aggiungere dopo **"g"** per creare i seguenti grafici?
+
+### Creare un Boxplot
+```{r selection-boxplot,warning=FALSE, fig.width = 10, fig.height = 6}
+(g + geom_() + labs(title = "Boxplot", subtitle = "g + geom_boxplot()")) 
+
+```
+### Creare un Violin
+```{r violin,warning=FALSE, fig.width = 10, fig.height = 6}
+(g + geom_() + labs(title = "Violin plot", subtitle = "g + geom_violin()")) 
+
+```
+### Line
+```{r line,warning=FALSE, fig.width = 10, fig.height = 6}
+(g + geom_(size = 1) + labs(title = "Line plot", subtitle = "g + geom_line (size = 1)"))
+
+```
+### Point
+```{r point, echo=FALSE, fig.width = 10, fig.height = 6}
+(g +  + labs(title = "Dot strip plot", subtitle = "g + geom_point(size = 1)")) 
+
+```
+
+### Ricapitoliamo
+
+Tutti e quattro i tipi di grafici consentono ai lettori di esplorare la gamma di valori ma con dettagli e focus diversi. Il diagramma a scatole e il diagramma a violino riassumono entrambi i dati, contengono molte informazioni visualizzando la distribuzione dei punti dati in due modi diversi. Al contrario, il diagramma a strisce e il diagramma a linee mostrano i dati grezzi. Tuttavia, un grafico a linee non è una buona scelta qui in quanto non consente l'identificazione di singoli paesi. Aggiungendo un argomento `alpha` a` geom_point()`, il diagramma a strisce è in grado di evidenziare la gamma di rapporti studente-insegnante fornendo i dati grezzi
+
+## Ultimi dettagli
+
+### Provate questo codice, come vi sembra la rappresentazione grafica? manca qualcosa?
+```{r dot-plot-alpha,warning=FALSE, fig.width = 8, fig.heigh = 4.5}
+g + geom_point(size = 3, alpha = 0.15)
+```
+
+### Il segreto per la migliore rappresentazione è quello di combinare diversi `geom`
+
+### Aggiungi `geom_boxplot(color = "gray60", outlier.alpha = 0) +` al codice di sotto, dove lo devi aggiungere?
+
+```{r box-dot-plot,warning=FALSE, fig.width = 8, fig.heigh = 4.5}
+g + geom_point(size = 3, alpha = 0.15)
+```
+
+### Prima di **run** questo codice, completalo aggiungendo i giusti valori per  `alpha` , `width` e `size`
+```{r worldwide-avg, echo=-1,warning=FALSE, fig.width = 8, fig.heigh = 4.5}
+set.seed(123)
+world_avg <- df_ratios %>%
+  summarize(avg = ******) %>% # aggiungi la mean di student ratio mantenendo na.rm = T
+  pull(avg)
+g +
+  geom_hline(aes(yintercept = **** ), color = "gray70", size = 0.6) + # qual è la yintercept? 
+  stat_summary(fun.y = mean, geom = "point", size = 5) +
+  geom_jitter(size = , alpha = , width = ) # completa qui 
+```
+
+```{r setup do not run, echo=FALSE, fig.heigh=, fig.width=8, warning=FALSE, include=FALSE}
+set.seed(123)
+world_avg <- df_ratios %>%
+  summarize(avg = mean(student_ratio, na.rm = T)) %>%
+  pull(avg)
+g +
+  geom_hline(aes(yintercept = world_avg), color = "gray70", size = 0.6) +
+  stat_summary(fun.y = mean, geom = "point", size = 5) +
+  geom_jitter(size = 2, alpha = 0.25, width = 0.2)
+```
+
+## L'ultimo grafico:
+
+### Congratulazioni! hai finito, ora ti manca solo di generare l'ultimo grafico, cambia i contenuti dei `labels` dall'inglese all'italiano 
+
+```{r last-graph-hidden, warning=FALSE, fig.width = 8, fig.heigh = 4.5,echo=FALSE, message = FALSE}
+set.seed(123)
+(g_text <- g +
+  geom_segment(aes(x = ***, xend = ***,
+                   y = ***, yend = ***),
+               size = 0.8) +
+  geom_hline(aes(yintercept = world_avg), color = "gray70", size = 0.6) +
+  stat_summary(fun.y = mean, geom = "point", size = 5) +
+  geom_jitter(size = 2, alpha = 0.25, width = 0.2) +
+  annotate("text", x = 6.3, y = 35, size = 2.7, color = "gray20",
+           label = glue::glue("Worldwide average:\n{round(world_avg, 1)} students per teacher")) +
+  annotate("text", x = 3.5, y = 10, size = 2.7, color = "gray20",
+           label = "Continental average") +
+  annotate("text", x = 1.7, y = 11,  size = 2.7, color = "gray20",
+           label = "Countries per continent") +
+  annotate("text", x = 1.9, y = 64,  size = 2.7, color = "gray20",
+           label = "The Central African Republic has by far\nthe most students per teacher"))
+```
+
+```{r text-labels, echo=-1, warning=FALSE, fig.width = 8, fig.heigh = 4.5}
+set.seed(123)
+(g_text <- g +
+  geom_segment(aes(x = region, xend = region,
+                   y = world_avg, yend = student_ratio_region),
+               size = 0.8) +
+  geom_hline(aes(yintercept = world_avg), color = "gray70", size = 0.6) +
+  stat_summary(fun.y = mean, geom = "point", size = 5) +
+  geom_jitter(size = 2, alpha = 0.25, width = 0.2) +
+  annotate("text", x = 6.3, y = 35, size = 2.7, color = "gray20",
+           label = glue::glue("Worldwide average:\n{round(world_avg, 1)} students per teacher")) +
+  annotate("text", x = 3.5, y = 10, size = 2.7, color = "gray20",
+           label = "Continental average") +
+  annotate("text", x = 1.7, y = 11,  size = 2.7, color = "gray20",
+           label = "Countries per continent") +
+  annotate("text", x = 1.9, y = 64,  size = 2.7, color = "gray20",
+           label = "The Central African Republic has by far\nthe most students per teacher"))
+```
+
+
+### Congratulazioni! 
+Hai completato il corso di Data Science, clicca qui per vedere le altre attività FEM! 
+[Sito FEM](https://fem.digital)
+
+
+
