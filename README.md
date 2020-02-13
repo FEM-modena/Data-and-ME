@@ -1,5 +1,10 @@
 # Data and ME
- Material for the workshops organized at FEM in collaboration with UniMore
+
+Solutions can be found here: [master the Tidyverse](https://github.com/rstudio-education/master-the-tidyverse/)
+
+If you are interested in a complete step-by-step course on how to use Statistics and Data Science to answer social science questions, check out [philipp broniecki's material](https://philippbroniecki.com/statistics1/) (I was his TA)
+
+Material for the workshops organized at FEM in collaboration with UniMore
  
 Data Science & Me is a free introductory course to R programming and Data Science for the UniMoRe students. The lessons will be hosted at FEM - Future Education Modena.
 
